@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WMedlaw DTR & Timekeeping — Interactive User Guide & Walkthrough</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom animations & scrollbar styles */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: black !important; }
+      .tab-content { display: block !important; page-break-after: always; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- TOP APP BANNER & SIMULATED HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 p-0.5 shadow-xs">
+            <img src="/wmedlaw_logo.jpeg" alt="WMedlaw Logo" class="w-full h-full object-contain" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-slate-900 tracking-tight text-lg">WMedlaw</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium font-mono">DTR v1.0</span>
+            </div>
+            <p class="text-xs text-slate-500 hidden sm:block">Interactive Operations & User Walkthrough Manual</p>
+          </div>
+        </div>
+
+        <!-- Role Switcher & Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <div class="hidden md:flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-medium">
+            <button onclick="switchRole('all')" id="role-btn-all" class="role-btn px-3 py-1.5 rounded-md bg-white text-blue-700 shadow-xs transition">All Roles</button>
+            <button onclick="switchRole('employee')" id="role-btn-employee" class="role-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Employee</button>
+            <button onclick="switchRole('admin')" id="role-btn-admin" class="role-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Administrator</button>
+            <button onclick="switchRole('sysadmin')" id="role-btn-sysadmin" class="role-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">System Admin</button>
+          </div>
+
+          <button onclick="window.print()" class="no-print inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 shadow-xs transition">
+            <svg class="w-4 h-4 mr-1.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print Guide
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="no-print bg-slate-50 border-t border-slate-200 overflow-x-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 py-2">
+        <button onclick="showTab('simulator')" id="nav-simulator" class="tab-btn px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-blue-700 bg-blue-50 border border-blue-200/60 whitespace-nowrap flex items-center gap-1.5 transition">
+          <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+          Interactive Live Simulator
+        </button>
+        <button onclick="showTab('employee-guide')" id="nav-employee-guide" class="tab-btn px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white whitespace-nowrap transition">
+          Employee Portal
+        </button>
+        <button onclick="showTab('admin-guide')" id="nav-admin-guide" class="tab-btn px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white whitespace-nowrap transition">
+          Admin Operations
+        </button>
+        <button onclick="showTab('sysadmin-guide')" id="nav-sysadmin-guide" class="tab-btn px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white whitespace-nowrap transition">
+          Super Admin Governance
+        </button>
+        <button onclick="showTab('calculator')" id="nav-calculator" class="tab-btn px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white whitespace-nowrap transition">
+          Decimal & Shift Calculator
+        </button>
+        <button onclick="showTab('faq')" id="nav-faq" class="tab-btn px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white whitespace-nowrap transition">
+          Searchable FAQ
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- HERO INTRODUCTION -->
+    <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 sm:p-8 text-white mb-8 shadow-xl relative overflow-hidden">
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-medium mb-3 backdrop-blur-xs">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Hands-On Interactive Guide
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
+          WMedlaw DTR & Timekeeping System
+        </h1>
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+          Welcome to the interactive operations guide. Test live punch simulations, explore step-by-step role workflows, calculate exact decimal hours, and learn how to manage daily attendance, overtime adjudication, and payroll.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="showTab('simulator')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-md transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Try Interactive Simulator
+          </button>
+          <button onclick="showTab('employee-guide')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium rounded-lg backdrop-blur-xs border border-white/20 transition">
+            Employee Quickstart
+          </button>
+          <button onclick="showTab('admin-guide')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium rounded-lg backdrop-blur-xs border border-white/20 transition">
+            Admin Approvals Guide
+          </button>
+        </div>
+      </div>
+      <!-- Decorative background grid -->
+      <div class="absolute -right-12 -bottom-12 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: INTERACTIVE LIVE SIMULATOR -->
+    <!-- ========================================================================= -->
+    <section id="tab-simulator" class="tab-content space-y-8">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span>Interactive System Sandbox</span>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Live Test Mode</span>
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Experience the real-life workflows right here in your browser without altering actual production records.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Simulated Server Clock: <strong id="sim-live-clock">2026-10-21 08:30:00</strong></span>
+        </div>
+      </div>
+
+      <!-- SIMULATOR 1: EMPLOYEE LIVE PUNCH STATION -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Interactive Station Card -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-blue-600"></div>
+                <h3 class="font-bold text-slate-900 text-base">Employee Punch Clock Station</h3>
+              </div>
+              <span id="sim-status-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                Ready to Clock In
+              </span>
+            </div>
+
+            <!-- Punch Station Display -->
+            <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-xl p-6 text-white text-center mb-6 shadow-inner relative overflow-hidden">
+              <div class="text-xs uppercase tracking-wider text-slate-400 font-medium mb-1">Elapsed Shift Time</div>
+              <div id="sim-timer-display" class="font-mono text-4xl sm:text-5xl font-black text-white tracking-tight my-2">
+                00:00:00
+              </div>
+              <div class="flex items-center justify-center gap-4 text-xs text-slate-400">
+                <span>Decimal: <strong id="sim-decimal-display" class="text-emerald-400 font-mono text-sm">0.00 h</strong></span>
+                <span>•</span>
+                <span>Max Daily Cap: <strong class="text-slate-300">8.00 h</strong></span>
+              </div>
+              <div id="sim-pulse-dot" class="hidden absolute top-4 right-4 flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                Recording Shift
+              </div>
+            </div>
+
+            <!-- Accomplishment Remarks -->
+            <div class="mb-4">
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="sim-remarks" class="block text-xs font-bold text-slate-700">
+                  Accomplishment Remarks <span class="text-red-500">*</span>
+                </label>
+                <span id="sim-char-count" class="text-xs text-slate-400 font-mono">0 / 10 min chars</span>
+              </div>
+              <textarea id="sim-remarks" rows="2" placeholder="Required upon clocking out: describe your deliverables (e.g. prepared monthly compliance reports and reviewed time records)..." 
+                class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none transition disabled:bg-slate-100 disabled:text-slate-400"
+                oninput="updateCharCount()"></textarea>
+              <p id="sim-remarks-warning" class="hidden text-xs text-amber-600 font-medium mt-1">
+                ⚠️ Policy reminder: Remarks must be at least 10 characters long before clocking out.
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div>
+            <div id="sim-clockin-controls" class="flex gap-3">
+              <button onclick="simClockIn()" class="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                Punch Clock In (Start Shift)
+              </button>
+            </div>
+
+            <div id="sim-clockout-controls" class="hidden flex flex-col sm:flex-row gap-3">
+              <button onclick="simClockOut()" class="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+                Punch Clock Out (Submit DTR)
+              </button>
+              <button onclick="simCancelPunch()" class="py-3 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition">
+                Cancel Accidental Punch
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Simulator Walkthrough Explainer & Live Activity Stream -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Step Instructions -->
+          <div class="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-5">
+            <h4 class="font-bold text-blue-900 text-sm flex items-center gap-1.5 mb-2">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              How This Works in the Actual App
+            </h4>
+            <ol class="text-xs text-blue-950 space-y-2 list-decimal list-inside leading-relaxed">
+              <li><strong>Server Clock Sync:</strong> The app never relies on user device time. Punches always query the backend server clock to prevent manipulation.</li>
+              <li><strong>Top Nav Quick Punch:</strong> You can also punch in from the emerald button permanently anchored in the top header.</li>
+              <li><strong>10-Character Rule:</strong> Clock-out requires task notes so management knows what was accomplished during the billable session.</li>
+              <li><strong>Accidental Cancellation:</strong> If clocked in by error, click "Cancel Accidental Punch" to discard the entry without penalty.</li>
+            </ol>
+          </div>
+
+          <!-- Activity History Table -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Simulated Timesheet Records</h4>
+              <button onclick="clearSimHistory()" class="text-xs text-slate-400 hover:text-slate-600">Clear</button>
+            </div>
+            <div id="sim-history-list" class="space-y-2 max-h-56 overflow-y-auto text-xs">
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-500 text-center">
+                No simulated sessions filed yet. Click "Punch Clock In" above!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIMULATOR 2: ADMIN APPROVAL WORKFLOW -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs mt-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Administrator View</span>
+            <h3 class="text-lg font-bold text-slate-900">Admin Timesheet Adjudication Queue</h3>
+            <p class="text-xs text-slate-500">Test how administrators review standard filings, bulk approve clean records, and adjudicate overtime.</p>
+          </div>
+          <button onclick="simBulkApprove()" class="self-start sm:self-auto px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Bulk Approve Clean Entries
+          </button>
+        </div>
+
+        <div class="space-y-3" id="admin-queue-container">
+          <!-- Item 1: Standard clean shift -->
+          <div id="admin-item-1" class="p-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                JD
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-bold text-sm text-slate-900">Jane Doe</h4>
+                  <span class="text-xs text-slate-500 font-mono">EMP-104</span>
+                  <span id="badge-item-1" class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">Submitted</span>
+                </div>
+                <div class="text-xs text-slate-600 mt-1">
+                  <strong>Date:</strong> 2026-10-20 • <strong>Time:</strong> 08:00 – 17:00 • <strong>Hours:</strong> 8.00 h (Regular: 8.00 h, Extra: 0.00 h)
+                </div>
+                <div class="text-xs text-slate-500 italic mt-0.5">
+                  "Completed legal document drafting and client intake calls."
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0" id="actions-item-1">
+              <button onclick="simApproveItem('item-1')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition">Approve</button>
+              <button onclick="simRejectItem('item-1')" class="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition">Reject</button>
+            </div>
+          </div>
+
+          <!-- Item 2: Overtime shift needing decision -->
+          <div id="admin-item-2" class="p-4 rounded-xl border border-amber-200 bg-amber-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0">
+                MS
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-bold text-sm text-slate-900">Mark Santos</h4>
+                  <span class="text-xs text-slate-500 font-mono">EMP-108</span>
+                  <span id="badge-item-2" class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-medium">Extra Hours Pending</span>
+                </div>
+                <div class="text-xs text-slate-600 mt-1">
+                  <strong>Date:</strong> 2026-10-20 • <strong>Time:</strong> 08:00 – 18:30 • <strong>Hours:</strong> 10.50 h (Reg: 8.00 h + Extra: 2.50 h)
+                </div>
+                <div class="text-xs text-slate-500 italic mt-0.5">
+                  "Emergency trial preparation and evening filings with senior counsel."
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0" id="actions-item-2">
+              <button onclick="simApproveAllItem('item-2')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-2xs transition">Approve All (10.5h)</button>
+              <button onclick="simDeclineExtraItem('item-2')" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition">Regular Only (8.0h)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: EMPLOYEE PORTAL USER GUIDE -->
+    <!-- ========================================================================= -->
+    <section id="tab-employee-guide" class="tab-content hidden space-y-8">
+      
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">Employee Portal: End-to-End Walkthrough</h2>
+        <p class="text-slate-500 text-sm mt-1">Everything an employee needs to know to record time, review hours, request adjustments, and track pay periods.</p>
+      </div>
+
+      <!-- Feature Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Card 1 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold mb-3">
+            01
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Live Punch Clock</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Click <strong>Punch Clock In</strong> in the top header or main dashboard. The app pulls the tamper-resistant server timestamp. When finishing work, document at least 10 characters of accomplishments and clock out.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Includes Cancel Punch Option</span>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold mb-3">
+            02
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Manual DTR Filing</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            If you worked offline or forgot to punch, navigate to <strong>File DTR & Dashboard</strong> &rarr; <strong>Manual DTR Filing</strong>. Use quick shift presets (e.g. 08:00–17:00), enter notes, and submit.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Overlaps Blocked Automatically</span>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold mb-3">
+            03
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Reviewing Records & Edits</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Under <strong>My DTR Records</strong>, view all recorded shifts. Standard shifts are automatically approved upon completion. If an admin adjusted your hours, inspect the revision note.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Full Revision History Trail</span>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold mb-3">
+            04
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Correction Requests</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Need to change an already-filed session? Go to <strong>Correction Requests</strong> &rarr; <strong>+ New Correction</strong>. Enter the proposed start/end times and a mandatory reason for manager review.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">Audited Approval Flow</span>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold mb-3">
+            05
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Wage Privacy Protection</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            The <strong>Payment Status</strong> tab displays total approved payable hours, hours awaiting review, and disbursement stage (Pending, Processing, Paid) with financial rates private and masked.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">Strict Privacy Safeguard</span>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-blue-400 transition">
+          <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold mb-3">
+            06
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Profile & Password</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Update your residential address, contact number, and emergency contacts in <strong>My Profile</strong>. You can change your password anytime via the profile dropdown in the navigation header.
+          </p>
+          <span class="inline-flex text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">Self-Service Profile</span>
+        </div>
+
+      </div>
+
+      <!-- Illustrated Shift Lifecycle Flowchart -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+        <h3 class="font-bold text-slate-900 text-base mb-4">Lifecycle of an Employee DTR Record</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+          
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center mx-auto mb-2">1</div>
+            <h4 class="font-bold text-sm text-slate-900">Punch or File</h4>
+            <p class="text-xs text-slate-500 mt-1">Clock in/out or submit manual form with notes.</p>
+            <span class="mt-2 inline-block text-xs font-mono px-2 py-0.5 bg-blue-100 text-blue-800 rounded">Status: Submitted</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center mx-auto mb-2">2</div>
+            <h4 class="font-bold text-sm text-slate-900">Threshold Check</h4>
+            <p class="text-xs text-slate-500 mt-1">If &le; 8h, stays standard. If &gt; 8h, splits into regular + extra.</p>
+            <span class="mt-2 inline-block text-xs font-mono px-2 py-0.5 bg-purple-100 text-purple-800 rounded">Status: Extra Pending</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center mx-auto mb-2">3</div>
+            <h4 class="font-bold text-sm text-slate-900">Admin Review</h4>
+            <p class="text-xs text-slate-500 mt-1">Manager approves, adjusts times, or decides overtime hours.</p>
+            <span class="mt-2 inline-block text-xs font-mono px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">Status: Approved</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="w-7 h-7 rounded-full bg-teal-600 text-white font-bold text-xs flex items-center justify-center mx-auto mb-2">4</div>
+            <h4 class="font-bold text-sm text-slate-900">Payroll Lock</h4>
+            <p class="text-xs text-slate-500 mt-1">Pay period finalized, hours locked, disbursement marked.</p>
+            <span class="mt-2 inline-block text-xs font-mono px-2 py-0.5 bg-teal-100 text-teal-800 rounded">Status: Paid</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: ADMINISTRATOR OPERATIONS GUIDE -->
+    <!-- ========================================================================= -->
+    <section id="tab-admin-guide" class="tab-content hidden space-y-8">
+      
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">Administrator Operations & Management Guide</h2>
+        <p class="text-slate-500 text-sm mt-1">Managing daily timesheets, overtime adjudication, payroll generation, user approvals, and audit trails.</p>
+      </div>
+
+      <!-- Admin Workflow Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Action 1 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs font-bold">Timesheet Approvals</span>
+            <span class="text-xs text-slate-400">• DTR Filings</span>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 mb-2">Reviewing & Bulk Approving Filings</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            In <strong>DTR Filings & Approvals</strong>, review entries with accomplishments. Use the <strong>Bulk Approve</strong> button in the header to approve all clean entries (entries without overtime) in a single click.
+          </p>
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+            <strong>Conflict of Interest Rule:</strong> Administrators cannot approve their own DTR records. Another admin or super admin must review administrative punches.
+          </div>
+        </div>
+
+        <!-- Action 2 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-xs font-bold">Overtime Decisions</span>
+            <span class="text-xs text-slate-400">• Extra Hours Queue</span>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 mb-2">Adjudicating Extra Hours</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Sessions exceeding daily or weekly limits route to the <strong>Extra Hours Queue</strong>. Admins can choose:
+          </p>
+          <ul class="text-xs text-slate-600 list-disc list-inside space-y-1 mb-3">
+            <li><strong>Approve All:</strong> Pays both regular and extra hours.</li>
+            <li><strong>Approve Regular Only:</strong> Pays regular portion; excess extra hours are declined with a mandatory note sent to the employee.</li>
+            <li><strong>Reject / Decline Session:</strong> Rejects the entire session (0.00h payable) with a mandatory justification note (e.g. erroneous filing).</li>
+          </ul>
+        </div>
+
+        <!-- Action 3 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">Payroll Batches</span>
+            <span class="text-xs text-slate-400">• Pay Periods & Payroll</span>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 mb-2">Pre-Close Checklist & Closing Pay Periods</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Before closing a pay cycle, click <strong>Run Pre-Close Check</strong>. The system verifies there are 0 unreviewed filings, 0 pending extra hours, and 0 open sessions. Once clean, click <strong>Close Period</strong> and <strong>Lock Period</strong>.
+          </p>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">Prevents Retroactive Modifications</span>
+        </div>
+
+        <!-- Action 4 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded bg-teal-100 text-teal-800 text-xs font-bold">Staff Onboarding</span>
+            <span class="text-xs text-slate-400">• Employees & Wages</span>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 mb-2">Approving New Registrations & Setting Wages</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Newly registered staff land in the <strong>Pending Registrations</strong> queue. Admins assign their role, department, clock-in permission, and starting hourly wage before activation.
+          </p>
+          <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-900">
+            <strong>Admin Wage Isolation:</strong> Regular administrators cannot view or modify their own hourly pay rate or the pay of other administrators. Only the System Administrator can do so.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Report Export Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+        <h3 class="font-bold text-slate-900 text-base mb-2">Exportable Management CSV Reports</h3>
+        <p class="text-xs text-slate-500 mb-4">Located under <strong>Reports & Exports</strong>. All reports can be downloaded in standard CSV format for accounting and payroll integrations.</p>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+              <tr>
+                <th class="p-3 rounded-l-lg">Report Type</th>
+                <th class="p-3">Data Included</th>
+                <th class="p-3 rounded-r-lg">Primary Use Case</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="p-3 font-bold text-slate-900">Hours by Employee</td>
+                <td class="p-3 text-slate-600">ID, Name, Dept, Regular Hours, Extra Hours, Total Approved</td>
+                <td class="p-3 text-slate-500">Resource planning & workload evaluation</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-slate-900">Payroll Summary</td>
+                <td class="p-3 text-slate-600">Period, Staff ID, Approved Hours, Wage, Gross Pay, Status, Ref #</td>
+                <td class="p-3 text-slate-500">Bank batch disbursements & accounting entries</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-slate-900">Extra Hours Report</td>
+                <td class="p-3 text-slate-600">Date, Employee, Times, Regular, Extra, Limit Crossed, Adjudication Notes</td>
+                <td class="p-3 text-slate-500">Overtime compliance audit & executive oversight</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-slate-900">Accomplishments</td>
+                <td class="p-3 text-slate-600">Date, Employee, Dept, Start/End Times, Deliverable Remarks</td>
+                <td class="p-3 text-slate-500">Performance review & client billing substantiation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: SUPER ADMIN GOVERNANCE -->
+    <!-- ========================================================================= -->
+    <section id="tab-sysadmin-guide" class="tab-content hidden space-y-8">
+      
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">System Administrator (Super Admin) Governance</h2>
+        <p class="text-slate-500 text-sm mt-1">Exclusive root administrative controls, compensation governance, period unlocking, and retention management.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Col 1 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm mb-3">
+            👑
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Hidden Architecture</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            The root Super Admin account (<code class="bg-slate-100 px-1 py-0.5 rounded">marquez.ronrons@gmail.com</code>) has <code class="bg-slate-100 px-1 py-0.5 rounded">is_hidden = true</code>. It never appears in employee directories, dropdowns, or staff lists to ensure security and privacy.
+          </p>
+        </div>
+
+        <!-- Col 2 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm mb-3">
+            💰
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Admin Wage Control</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Only the System Administrator has permission to view, set, or adjust administrator hourly rates. Standard admins cannot view peers' or their own wages, eliminating conflicts of interest.
+          </p>
+        </div>
+
+        <!-- Col 3 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm mb-3">
+            🔓
+          </div>
+          <h3 class="font-bold text-slate-900 text-base mb-1">Emergency Period Unlock</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            If a retroactive timesheet adjustment is required after a pay cycle has been locked, only the System Administrator can reopen the period, with a mandatory audit justification reason.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Super Admin Feature Matrix -->
+      <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl">
+        <h3 class="font-bold text-lg mb-3">System-Wide Global Rules Configuration</h3>
+        <p class="text-xs text-slate-400 mb-6">Configured in the System Admin Control Panel under System-Wide Rules & Settings:</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
+            <div class="text-slate-400 font-mono text-2xs uppercase">Work Week Rule</div>
+            <div class="font-bold text-white text-sm mt-1">Monday – Sunday</div>
+            <p class="text-slate-400 mt-1">Standard weekly overtime accumulation boundary.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
+            <div class="text-slate-400 font-mono text-2xs uppercase">Semi-Monthly Schedule</div>
+            <div class="font-bold text-white text-sm mt-1">16th & 1st Pay Dates</div>
+            <p class="text-slate-400 mt-1">1st–15th paid on 16th; 16th–End paid on 1st.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
+            <div class="text-slate-400 font-mono text-2xs uppercase">Weekend Roll Rule</div>
+            <div class="font-bold text-white text-sm mt-1">Previous Business Day</div>
+            <p class="text-slate-400 mt-1">If pay date falls on a weekend, disburses on Friday.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
+            <div class="text-slate-400 font-mono text-2xs uppercase">Daily Limit Standard</div>
+            <div class="font-bold text-white text-sm mt-1">8.00 Hours / Day</div>
+            <p class="text-slate-400 mt-1">Excess hours automatically route to Overtime Queue.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 5: DECIMAL & SHIFT CALCULATOR -->
+    <!-- ========================================================================= -->
+    <section id="tab-calculator" class="tab-content hidden space-y-8">
+      
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">Decimal Hour & Overnight Shift Calculator</h2>
+        <p class="text-slate-500 text-sm mt-1">The system tracks all working sessions in exact 2-decimal-place hours. Test times, midnight crossings, and pay calculations here.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Interactive Live Calculator -->
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <h3 class="font-bold text-slate-900 text-base">Interactive Shift Time Tester</h3>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Start Time (Time In)</label>
+              <input type="time" id="calc-time-in" value="08:00" onchange="runCalculator()" class="w-full text-sm rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">End Time (Time Out)</label>
+              <input type="time" id="calc-time-out" value="17:00" onchange="runCalculator()" class="w-full text-sm rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 font-mono">
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div>
+            <span class="text-xs font-semibold text-slate-500 block mb-1.5">Common Shift Presets:</span>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button onclick="applyPreset('08:00', '17:00')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700">08:00 – 17:00 (Standard)</button>
+              <button onclick="applyPreset('09:00', '18:00')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700">09:00 – 18:00 (Mid)</button>
+              <button onclick="applyPreset('22:00', '06:00')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700">22:00 – 06:00 (Overnight)</button>
+              <button onclick="applyPreset('08:00', '12:30')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700">08:00 – 12:30 (Half-Day)</button>
+            </div>
+          </div>
+
+          <!-- Optional Rate Test -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Optional Hourly Rate (₱ / hr)</label>
+            <input type="number" id="calc-wage" value="350" step="10" oninput="runCalculator()" class="w-full text-sm rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 font-mono">
+          </div>
+
+          <!-- Calculated Output Box -->
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-xl p-5 text-white space-y-3">
+            <div class="flex justify-between items-center text-xs text-slate-300">
+              <span>Total Elapsed Minutes:</span>
+              <strong id="calc-minutes" class="font-mono text-sm text-white">540 mins</strong>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-300">
+              <span>Decimal Hours (Standard System):</span>
+              <strong id="calc-decimal" class="font-mono text-xl text-emerald-400 font-bold">9.00 h</strong>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-300">
+              <span>Hours Breakdown:</span>
+              <span id="calc-breakdown" class="font-mono text-xs text-slate-200">8.00 h Reg + 1.00 h Extra</span>
+            </div>
+            <div id="calc-overnight-banner" class="hidden text-xs bg-indigo-500/30 text-indigo-200 p-2 rounded border border-indigo-400/30">
+              🌙 <strong>Overnight Shift Detected:</strong> Added 24 hours (1440m) across midnight cleanly.
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-sm">
+              <span class="font-bold text-slate-300">Gross Pay Preview:</span>
+              <strong id="calc-gross" class="font-mono text-lg text-emerald-300 font-bold">₱3,150.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Official Conversion Table -->
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <h3 class="font-bold text-slate-900 text-base">Decimal Conversion Reference Chart</h3>
+          <p class="text-xs text-slate-500">
+            Formula: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-800">Decimal Hours = round(Minutes / 60, 2)</code>
+          </p>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+                <tr>
+                  <th class="p-2.5">Minutes Worked</th>
+                  <th class="p-2.5">Decimal Hours</th>
+                  <th class="p-2.5">Dual Display Format</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-mono">
+                <tr><td class="p-2.5">15 min</td><td class="p-2.5 font-bold text-blue-600">0.25 h</td><td class="p-2.5 text-slate-600">0.25 h (15m)</td></tr>
+                <tr><td class="p-2.5">20 min</td><td class="p-2.5 font-bold text-blue-600">0.33 h</td><td class="p-2.5 text-slate-600">0.33 h (20m)</td></tr>
+                <tr><td class="p-2.5">30 min</td><td class="p-2.5 font-bold text-blue-600">0.50 h</td><td class="p-2.5 text-slate-600">0.50 h (30m)</td></tr>
+                <tr><td class="p-2.5">45 min</td><td class="p-2.5 font-bold text-blue-600">0.75 h</td><td class="p-2.5 text-slate-600">0.75 h (45m)</td></tr>
+                <tr><td class="p-2.5">60 min (1 hr)</td><td class="p-2.5 font-bold text-blue-600">1.00 h</td><td class="p-2.5 text-slate-600">1.00 h (1h)</td></tr>
+                <tr><td class="p-2.5">90 min (1.5 hrs)</td><td class="p-2.5 font-bold text-blue-600">1.50 h</td><td class="p-2.5 text-slate-600">1.50 h (1h 30m)</td></tr>
+                <tr><td class="p-2.5">120 min (2 hrs)</td><td class="p-2.5 font-bold text-blue-600">2.00 h</td><td class="p-2.5 text-slate-600">2.00 h (2h)</td></tr>
+                <tr><td class="p-2.5">480 min (8 hrs)</td><td class="p-2.5 font-bold text-blue-600">8.00 h</td><td class="p-2.5 text-slate-600">8.00 h (8h)</td></tr>
+                <tr><td class="p-2.5">510 min (8.5 hrs)</td><td class="p-2.5 font-bold text-blue-600">8.50 h</td><td class="p-2.5 text-slate-600">8.50 h (8h 30m)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 6: SEARCHABLE FAQ & TROUBLESHOOTING -->
+    <!-- ========================================================================= -->
+    <section id="tab-faq" class="tab-content hidden space-y-6">
+      
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">Searchable Troubleshooting & FAQ</h2>
+        <p class="text-slate-500 text-sm mt-1">Instant answers to the most common questions and issues across all user roles.</p>
+        
+        <!-- Live Search Box -->
+        <div class="mt-4 relative max-w-xl">
+          <input type="text" id="faq-search" oninput="filterFaq()" placeholder="Search keywords (e.g. 'wage', 'clock in', 'overnight', 'lock', 'reset')..." 
+            class="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+          <svg class="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="space-y-4" id="faq-list">
+        
+        <!-- FAQ 1 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q1: I tried to clock in or file DTR, but the system says "No hourly wage has been configured".</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Cause:</strong> To guarantee payroll integrity, the platform requires an active hourly rate before time entries can be filed.<br>
+            <strong>Resolution:</strong> An administrator must go to <strong>Employees & Wages</strong>, click <strong>Set Wage</strong> on your profile, specify your hourly rate, and enter the effective date.
+          </p>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q2: Why does my manual DTR entry say "Pay period covering date is CLOSED or LOCKED"?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Cause:</strong> Management has finalized that pay cycle. Standard users cannot submit retroactive entries into closed periods.<br>
+            <strong>Resolution:</strong> File a <strong>Correction Request</strong>, or contact the System Administrator to evaluate whether the period should be temporarily unlocked.
+          </p>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q3: An employee forgot to clock out and left for the day. How do we fix this?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Resolution:</strong> An administrator should navigate to <strong>DTR Filings & Approvals</strong>, filter status by <em>Open Sessions</em>, click <strong>Close Session on Behalf</strong>, specify their actual departure time, input an audit reason, and submit.
+          </p>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q4: How do employees know if their overtime / extra hours were declined?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Resolution:</strong> On the employee's <strong>My DTR Records</strong> tab, the entry displays the <code>Approved</code> or <code>Adjusted</code> status badge. Clicking the entry reveals the manager's review note explaining why excess hours were declined.
+          </p>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q5: Can regular administrators see how much other administrators earn?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Resolution:</strong> No. All administrator wages are strictly hidden from regular administrators. Only the root System Administrator can view and configure administrator compensation.
+          </p>
+        </div>
+
+        <!-- FAQ 6 -->
+        <div class="faq-item bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+          <h3 class="font-bold text-slate-900 text-sm mb-1 text-blue-700">Q6: What happens if an employee works overnight across midnight?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <strong>Resolution:</strong> When Time Out is numerically earlier than Time In (e.g. 22:00 to 06:00), the system automatically adds 24 hours (1440 minutes) to calculate the full 8.00h shift cleanly without error or manual date splitting.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        &copy; 2026 <strong>WMedlaw DTR & Timekeeping</strong> — All rights reserved.
+      </div>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span>Confidential & Proprietary</span>
+        <span>•</span>
+        <span>Version 1.0 (Interactive Edition)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT CONTROLLERS -->
+  <!-- ========================================================================= -->
+  <script>
+    // TAB CONTROLLER
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const activeEl = document.getElementById('tab-' + tabId);
+      if (activeEl) activeEl.classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200/60');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200/60');
+        activeBtn.classList.remove('text-slate-600');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ROLE FILTER
+    function switchRole(role) {
+      document.querySelectorAll('.role-btn').forEach(b => {
+        b.classList.remove('bg-white', 'text-blue-700', 'shadow-xs');
+        b.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById('role-btn-' + role);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-blue-700', 'shadow-xs');
+        activeBtn.classList.remove('text-slate-600');
+      }
+
+      if (role === 'employee') {
+        showTab('employee-guide');
+      } else if (role === 'admin') {
+        showTab('admin-guide');
+      } else if (role === 'sysadmin') {
+        showTab('sysadmin-guide');
+      } else {
+        showTab('simulator');
+      }
+    }
+
+    // SIMULATOR STATE & TIMER
+    let simTimerInterval = null;
+    let simSeconds = 0;
+    let simIsActive = false;
+    let simStartTime = null;
+
+    function formatTimeStr(sec) {
+      const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function simClockIn() {
+      simIsActive = true;
+      simSeconds = 0;
+      simStartTime = new Date();
+      
+      document.getElementById('sim-status-badge').className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300";
+      document.getElementById('sim-status-badge').innerText = "Active Shift (Recording)";
+      
+      document.getElementById('sim-clockin-controls').classList.add('hidden');
+      document.getElementById('sim-clockout-controls').classList.remove('hidden');
+      document.getElementById('sim-pulse-dot').classList.remove('hidden');
+      
+      // Timer tick (simulated fast: 1 sec = 2.5 minutes of work for quick demonstration)
+      simTimerInterval = setInterval(() => {
+        simSeconds += 150; // fast-forward simulation
+        document.getElementById('sim-timer-display').innerText = formatTimeStr(simSeconds);
+        const decHours = (simSeconds / 3600).toFixed(2);
+        document.getElementById('sim-decimal-display').innerText = `${decHours} h`;
+      }, 1000);
+    }
+
+    function updateCharCount() {
+      const val = document.getElementById('sim-remarks').value;
+      const countEl = document.getElementById('sim-char-count');
+      countEl.innerText = `${val.length} / 10 min chars`;
+      if (val.length >= 10) {
+        countEl.className = "text-xs text-emerald-600 font-mono font-bold";
+        document.getElementById('sim-remarks-warning').classList.add('hidden');
+      } else {
+        countEl.className = "text-xs text-slate-400 font-mono";
+      }
+    }
+
+    function simClockOut() {
+      const remarks = document.getElementById('sim-remarks').value.trim();
+      if (remarks.length < 10) {
+        document.getElementById('sim-remarks-warning').classList.remove('hidden');
+        document.getElementById('sim-remarks').focus();
+        return;
+      }
+
+      clearInterval(simTimerInterval);
+      const decHours = (simSeconds / 3600).toFixed(2);
+
+      // Add to simulated history
+      addHistoryRecord("Live Punch", decHours, remarks);
+
+      // Reset station
+      simIsActive = false;
+      simSeconds = 0;
+      document.getElementById('sim-timer-display').innerText = "00:00:00";
+      document.getElementById('sim-decimal-display').innerText = "0.00 h";
+      document.getElementById('sim-remarks').value = "";
+      updateCharCount();
+      document.getElementById('sim-clockin-controls').classList.remove('hidden');
+      document.getElementById('sim-clockout-controls').classList.add('hidden');
+      document.getElementById('sim-pulse-dot').classList.add('hidden');
+      document.getElementById('sim-status-badge').className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200";
+      document.getElementById('sim-status-badge').innerText = "Ready to Clock In";
+
+      alert(`✅ Clock Out Successful!\nTotal Session: ${decHours} hours.\nYour timelog has been automatically approved.`);
+    }
+
+    function simCancelPunch() {
+      if (!confirm("Are you sure you want to cancel this accidental clock-in? No hours will be recorded.")) return;
+      clearInterval(simTimerInterval);
+      simIsActive = false;
+      simSeconds = 0;
+      document.getElementById('sim-timer-display').innerText = "00:00:00";
+      document.getElementById('sim-decimal-display').innerText = "0.00 h";
+      document.getElementById('sim-remarks').value = "";
+      updateCharCount();
+      document.getElementById('sim-clockin-controls').classList.remove('hidden');
+      document.getElementById('sim-clockout-controls').classList.add('hidden');
+      document.getElementById('sim-pulse-dot').classList.add('hidden');
+      document.getElementById('sim-status-badge').className = "px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200";
+      document.getElementById('sim-status-badge').innerText = "Punch Discarded";
+    }
+
+    function addHistoryRecord(type, hours, notes) {
+      const container = document.getElementById('sim-history-list');
+      if (container.innerText.includes("No simulated sessions")) {
+        container.innerHTML = "";
+      }
+      const div = document.createElement('div');
+      div.className = "p-3 bg-white rounded-lg border border-slate-200 shadow-2xs flex items-center justify-between";
+      div.innerHTML = `
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-900">${type}</span>
+            <span class="text-2xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold font-mono">${hours} h</span>
+            <span class="text-2xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">Submitted</span>
+          </div>
+          <p class="text-slate-500 text-xs mt-0.5 truncate max-w-xs">${notes}</p>
+        </div>
+        <span class="text-2xs text-slate-400 font-mono">Just Now</span>
+      `;
+      container.prepend(div);
+    }
+
+    function clearSimHistory() {
+      document.getElementById('sim-history-list').innerHTML = `
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-500 text-center">
+          No simulated sessions filed yet. Click "Punch Clock In" above!
+        </div>
+      `;
+    }
+
+    // ADMIN QUEUE SIMULATOR ACTIONS
+    function simApproveItem(id) {
+      document.getElementById('badge-' + id).className = "text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold";
+      document.getElementById('badge-' + id).innerText = "Approved (8.00h)";
+      document.getElementById('actions-' + id).innerHTML = `<span class="text-xs text-emerald-600 font-bold flex items-center gap-1">✓ Approved</span>`;
+    }
+
+    function simRejectItem(id) {
+      const reason = prompt("Enter required rejection reason:", "Incorrect billing code");
+      if (!reason) return;
+      document.getElementById('badge-' + id).className = "text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold";
+      document.getElementById('badge-' + id).innerText = "Rejected (0.00h)";
+      document.getElementById('actions-' + id).innerHTML = `<span class="text-xs text-red-600 font-bold">✕ Rejected</span>`;
+    }
+
+    function simApproveAllItem(id) {
+      document.getElementById('badge-' + id).className = "text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold";
+      document.getElementById('badge-' + id).innerText = "Approved All (10.50h)";
+      document.getElementById('actions-' + id).innerHTML = `<span class="text-xs text-purple-700 font-bold">✓ Approved Full 10.5h</span>`;
+    }
+
+    function simDeclineExtraItem(id) {
+      const reason = prompt("Enter justification for declining extra hours:", "Overtime was not pre-authorized");
+      if (!reason) return;
+      document.getElementById('badge-' + id).className = "text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold";
+      document.getElementById('badge-' + id).innerText = "Regular Only (8.00h)";
+      document.getElementById('actions-' + id).innerHTML = `<span class="text-xs text-blue-700 font-bold">✓ Approved Regular (8h)</span>`;
+    }
+
+    function simBulkApprove() {
+      simApproveItem('item-1');
+      alert("✅ Bulk Approval Finished: 1 clean timesheet entry was approved and logged to audit.");
+    }
+
+    // CALCULATOR CONTROLLER
+    function runCalculator() {
+      const inVal = document.getElementById('calc-time-in').value;
+      const outVal = document.getElementById('calc-time-out').value;
+      const wage = parseFloat(document.getElementById('calc-wage').value) || 0;
+
+      if (!inVal || !outVal) return;
+
+      const [inH, inM] = inVal.split(':').map(Number);
+      const [outH, outM] = outVal.split(':').map(Number);
+
+      let inTotal = inH * 60 + inM;
+      let outTotal = outH * 60 + outM;
+
+      let isOvernight = false;
+      if (outTotal < inTotal) {
+        outTotal += 1440; // 24 hours
+        isOvernight = true;
+      }
+
+      const diffMin = outTotal - inTotal;
+      const decHours = (diffMin / 60).toFixed(2);
+      const numHours = parseFloat(decHours);
+
+      // Breakdown vs 8.00 limit
+      let regHours = Math.min(8.0, numHours);
+      let extraHours = Math.max(0, numHours - 8.0);
+
+      document.getElementById('calc-minutes').innerText = `${diffMin} mins`;
+      document.getElementById('calc-decimal').innerText = `${decHours} h`;
+      document.getElementById('calc-breakdown').innerText = `${regHours.toFixed(2)} h Reg + ${extraHours.toFixed(2)} h Extra`;
+
+      const gross = (numHours * wage).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('calc-gross').innerText = `₱${gross}`;
+
+      const banner = document.getElementById('calc-overnight-banner');
+      if (isOvernight) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function applyPreset(start, end) {
+      document.getElementById('calc-time-in').value = start;
+      document.getElementById('calc-time-out').value = end;
+      runCalculator();
+    }
+
+    // FAQ SEARCH FILTER
+    function filterFaq() {
+      const query = document.getElementById('faq-search').value.toLowerCase();
+      document.querySelectorAll('.faq-item').forEach(item => {
+        const text = item.innerText.toLowerCase();
+        if (text.includes(query)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    // INITIALIZATION
+    window.onload = function() {
+      runCalculator();
+    };
+  </script>
+</body>
+</html>
