@@ -73,7 +73,7 @@ function isPublicUrl(url?: string | null): url is string {
 function getEmailLogoUrl(origin?: string): string {
   const base =
     [process.env.EMAIL_ASSET_URL, origin, process.env.APP_URL].find(isPublicUrl) || DEFAULT_PUBLIC_APP_URL;
-  return `${base.replace(/\/+$/, '')}/wmedlaw_logo.jpeg`;
+  return `${base.replace(/\/+$/, '')}/wmedlaw_logo.jpeg?v=2`;
 }
 
 function formatCurrency(val: number): string {

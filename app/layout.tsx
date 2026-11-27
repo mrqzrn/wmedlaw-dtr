@@ -22,21 +22,21 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/wmedlaw_logo.jpeg',
-    shortcut: '/wmedlaw_logo.jpeg',
-    apple: '/wmedlaw_logo.jpeg',
+    icon: '/wmedlaw_logo.jpeg?v=2',
+    shortcut: '/wmedlaw_logo.jpeg?v=2',
+    apple: '/wmedlaw_logo.jpeg?v=2',
   },
   openGraph: {
     title: 'WMedlaw — Daily Time Record (DTR) & Timekeeping System',
     description: 'Flexible hourly timekeeping, daily time records (DTR), role-based access control, and payment status for WMedlaw.',
-    images: [{ url: '/wmedlaw_logo.jpeg', width: 512, height: 512, alt: 'WMedlaw Logo' }],
+    images: [{ url: '/wmedlaw_logo.jpeg?v=2', width: 512, height: 512, alt: 'WMedlaw Logo' }],
     type: 'website',
   },
   twitter: {
     card: 'summary',
     title: 'WMedlaw — Daily Time Record (DTR) & Timekeeping System',
     description: 'Flexible hourly timekeeping, daily time records (DTR), role-based access control, and payment status for WMedlaw.',
-    images: ['/wmedlaw_logo.jpeg'],
+    images: ['/wmedlaw_logo.jpeg?v=2'],
   },
 };
 

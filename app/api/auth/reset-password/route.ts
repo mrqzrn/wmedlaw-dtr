@@ -43,7 +43,7 @@ function buildResetEmailHtml(resetLink: string, email: string, origin: string = 
           <tr>
             <td style="padding: 32px 28px;">
               <div style="text-align: center; margin-bottom: 24px;">
-                <img src="${origin}/wmedlaw_logo.jpeg" alt="WMedlaw Logo" width="56" height="56" style="display: block; margin: 0 auto 16px; width: 56px; height: 56px; border-radius: 12px; object-fit: contain; border: 1px solid #e2e8f0; background-color: #ffffff; padding: 2px;" />
+                <img src="${origin}/wmedlaw_logo.jpeg?v=2" alt="WMedlaw Logo" width="56" height="56" style="display: block; margin: 0 auto 16px; width: 56px; height: 56px; border-radius: 12px; object-fit: contain; border: 1px solid #e2e8f0; background-color: #ffffff; padding: 2px;" />
                 <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Reset Your Password</h1>
                 <p style="font-size: 14px; line-height: 22px; color: #475569; margin: 0;">We received a request to reset the password for <strong style="color: #0f172a;">${email}</strong> on WMedlaw DTR &amp; Timekeeping.</p>
               </div>
