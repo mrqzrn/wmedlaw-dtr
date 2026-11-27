@@ -7,7 +7,12 @@ import { formatDateTime } from '@/lib/utils-dtr';
 import { Pagination } from '@/components/common/Pagination';
 
 export function AdminAuditLog() {
-  const { visibleAuditLogs, currentUser } = useApp();
+  const { visibleAuditLogs, currentUser, refreshRemoteAuditLogs } = useApp();
+
+  // Audit logs are not part of background polling; load them when this tab opens.
+  useEffect(() => {
+    refreshRemoteAuditLogs();
+  }, [refreshRemoteAuditLogs]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');

@@ -435,6 +435,7 @@ interface AppContextType {
   refreshRemotePayPeriods: (token?: string) => Promise<void>;
   refreshRemoteReimbursements: (token?: string) => Promise<void>;
   refreshAllRemoteData: (token?: string) => Promise<void>;
+  refreshRemoteAuditLogs: (token?: string) => Promise<void>;
 
   // Reimbursement Filing & Approvals
   reimbursements: ReimbursementRequest[];
@@ -463,6 +464,14 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+// Background sync cadence (see the tiered refresh functions in AppProvider)
+const FAST_POLL_MS = 120_000;
+const SLOW_POLL_MS = 15 * 60_000;
+const RESUME_MIN_GAP_MS = 60_000;
+const PROFILES_REUSE_MS = 15_000;
+
+const isAdminRole = (role: UserRole | null) => role === 'admin' || role === 'system_admin';
 
 const mapProfileToUser = (p: any): User => {
   const isDefaultSysAdmin = (p.email || '').toLowerCase().trim() === 'marquez.ronrons@gmail.com';
@@ -629,6 +638,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isRefreshingDtrRef = React.useRef<boolean>(false);
   const isRefreshingAllRef = React.useRef<boolean>(false);
 
+  // Background-sync bookkeeping (see the polling effect below)
+  const currentRoleRef = React.useRef<UserRole | null>(null);
+  const isPendingApprovalRef = React.useRef<boolean>(false);
+  const lastProfilesFetchAtRef = React.useRef<number>(0);
+  const lastFastRefreshAtRef = React.useRef<number>(0);
+  const lastSlowRefreshAtRef = React.useRef<number>(0);
+  const seenNotificationIdsRef = React.useRef<Set<string> | null>(null);
+  const bootstrapRef = React.useRef<{ userId: string; promise: Promise<void> } | null>(null);
+
+  // Merge a /api/users result into state (shared by the sign-in sync and refreshRemoteProfiles)
+  const applyRemoteProfiles = useCallback((profiles: any[]) => {
+    lastProfilesFetchAtRef.current = Date.now();
+    setUsers((prev) => {
+      const map = new Map<string, User>();
+      prev.forEach((u) => map.set(u.id, u));
+      profiles.forEach((p: any) => {
+        const mapped = mapProfileToUser(p);
+        const prevUser = map.get(mapped.id);
+        if (prevUser && prevUser.status === 'active' && mapped.status === 'pending_approval' && !p.status) {
+          mapped.status = 'active';
+        }
+        map.set(p.id, mapped);
+      });
+      return Array.from(map.values());
+    });
+  }, []);
+
   // Sync Supabase Auth User with profile (guarded against concurrent loops)
   const syncUserFromSupabase = useCallback(async (authUser: SupabaseUser, token?: string) => {
     if (!authUser?.id) return;
@@ -649,6 +685,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
 
       let profileData: any = null;
+      let fetchedProfiles: any[] | null = null;
       const activeToken = token || sessionRef.current?.access_token;
 
       // Encrypted API fetch (only if active session token is present)
@@ -656,6 +693,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try {
           const res = await secureFetch('/api/users', { accessToken: activeToken });
           if (res.ok && res.data?.success && Array.isArray(res.data.users)) {
+            fetchedProfiles = res.data.users;
             const found = res.data.users.find(
               (p: any) => p.id === authUser.id || (p.email || '').toLowerCase().trim() === email
             );
@@ -871,11 +909,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return [mappedUser, ...prev];
       });
 
+      // Reuse the list we just fetched instead of a second /api/users round trip.
+      // Applied after the merge above to keep the same final state as the old
+      // sync-then-refreshRemoteProfiles sequence.
+      if (fetchedProfiles) applyRemoteProfiles(fetchedProfiles);
+      currentRoleRef.current = userRole;
+
       setCurrentUserId((prev) => (prev === authUser.id ? prev : authUser.id));
     } finally {
       isSyncingUserRef.current = false;
     }
-  }, []);
+  }, [applyRemoteProfiles]);
 
   const syncUserFromSupabaseRef = React.useRef(syncUserFromSupabase);
   syncUserFromSupabaseRef.current = syncUserFromSupabase;
@@ -925,26 +969,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const res = await secureFetch('/api/users', { accessToken: activeToken });
       if (res.ok && res.data?.success && Array.isArray(res.data.users)) {
-        setUsers((prev) => {
-          const map = new Map<string, User>();
-          prev.forEach((u) => map.set(u.id, u));
-          res.data.users.forEach((p: any) => {
-            const mapped = mapProfileToUser(p);
-            const prevUser = map.get(mapped.id);
-            if (prevUser && prevUser.status === 'active' && mapped.status === 'pending_approval' && !p.status) {
-              mapped.status = 'active';
-            }
-            map.set(p.id, mapped);
-          });
-          return Array.from(map.values());
-        });
+        applyRemoteProfiles(res.data.users);
       }
     } catch (err) {
       console.warn('Encrypted /api/users fetch failed:', err);
     } finally {
       isRefreshingProfilesRef.current = false;
     }
-  }, []);
+  }, [applyRemoteProfiles]);
 
   // Helper to upsert single DTR entry via encrypted API route
   const syncDtrToSupabase = useCallback(async (entry: DtrEntry): Promise<{ success: boolean; error?: string }> => {
@@ -1556,57 +1588,116 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch remote Notifications via encrypted API route
-  const refreshRemoteNotifications = useCallback(async (token?: string) => {
+  // Fetch remote Notifications via encrypted API route.
+  // Resolves true when a notification id appears that this tab hasn't seen before.
+  const refreshRemoteNotifications = useCallback(async (token?: string): Promise<boolean> => {
     const activeToken = token || sessionRef.current?.access_token;
-    if (!activeToken) return;
+    if (!activeToken) return false;
     try {
       const res = await secureFetch('/api/notifications', { accessToken: activeToken });
       if (res.ok && res.data?.success && Array.isArray(res.data.notifications)) {
+        const fetched: any[] = res.data.notifications;
+        const seen = seenNotificationIdsRef.current;
+        const hasNew = seen !== null && fetched.some((n) => n?.id && !seen.has(n.id));
+        seenNotificationIdsRef.current = new Set(fetched.map((n) => n?.id).filter(Boolean));
         setNotifications((prev) => {
-          if (prev.length === res.data.notifications.length && JSON.stringify(prev) === JSON.stringify(res.data.notifications)) {
+          if (prev.length === fetched.length && JSON.stringify(prev) === JSON.stringify(fetched)) {
             return prev;
           }
-          return res.data.notifications;
+          return fetched;
         });
+        return hasNew;
       }
     } catch (err) {
       console.warn('Encrypted /api/notifications fetch failed:', err);
     }
+    return false;
   }, []);
 
-  // Master refresh function to synchronize all Supabase business collections
+  /*
+   * Background sync is split into two tiers to keep serverless invocations low
+   * (see CPU_AUDIT_REPORT.md). Every collection is still loaded on sign-in via
+   * refreshAllRemoteData, and the user's own writes update local state directly.
+   *
+   * - Fast tier (every FAST_POLL_MS while the tab is visible): data other people
+   *   change during the day.
+   * - Slow tier (every SLOW_POLL_MS while visible, or right away when a new
+   *   notification arrives): data that rarely changes.
+   * - Audit logs are fetched only when the admin Audit tab opens.
+   */
+  const refreshProfilesIfStale = useCallback(async (token: string) => {
+    if (Date.now() - lastProfilesFetchAtRef.current < PROFILES_REUSE_MS) return;
+    await refreshRemoteProfiles(token);
+  }, [refreshRemoteProfiles]);
+
+  // Fast tier: notifications + DTR for everyone; admins also get the review queues.
+  // Users awaiting approval also poll their profile so the pending screen clears on its own.
+  const refreshFastTier = useCallback(async (token: string): Promise<boolean> => {
+    lastFastRefreshAtRef.current = Date.now();
+    const admin = isAdminRole(currentRoleRef.current);
+    const [notifResult] = await Promise.allSettled([
+      refreshRemoteNotifications(token),
+      refreshRemoteDtrEntries(token),
+      ...(admin
+        ? [refreshRemoteCorrections(token), refreshRemoteReimbursements(token), refreshRemoteApprovals(token)]
+        : []),
+      ...(isPendingApprovalRef.current ? [refreshRemoteProfiles(token)] : []),
+    ]);
+    return notifResult.status === 'fulfilled' && notifResult.value === true;
+  }, [refreshRemoteNotifications, refreshRemoteDtrEntries, refreshRemoteCorrections, refreshRemoteReimbursements, refreshRemoteApprovals, refreshRemoteProfiles]);
+
+  // Slow tier: rarely-changing data. Employees' own requests live here because an
+  // admin decision on them always arrives with a notification, which triggers this tier.
+  const refreshSlowTier = useCallback(async (token: string) => {
+    lastSlowRefreshAtRef.current = Date.now();
+    const admin = isAdminRole(currentRoleRef.current);
+    await Promise.allSettled([
+      refreshProfilesIfStale(token),
+      refreshRemotePayPeriods(token),
+      refreshRemotePayments(token),
+      refreshRemoteSettings(token),
+      ...(admin
+        ? [refreshRemoteWageHistory(token)]
+        : [refreshRemoteCorrections(token), refreshRemoteReimbursements(token), refreshRemoteApprovals(token)]),
+    ]);
+  }, [refreshProfilesIfStale, refreshRemotePayPeriods, refreshRemotePayments, refreshRemoteSettings, refreshRemoteWageHistory, refreshRemoteCorrections, refreshRemoteReimbursements, refreshRemoteApprovals]);
+
+  // Master refresh: every collection this role uses (sign-in, manual sync).
   const refreshAllRemoteData = useCallback(async (token?: string) => {
     const activeToken = token || sessionRef.current?.access_token;
     if (!activeToken) return;
     if (isRefreshingAllRef.current) return;
     isRefreshingAllRef.current = true;
+    const now = Date.now();
+    lastFastRefreshAtRef.current = now;
+    lastSlowRefreshAtRef.current = now;
+    const role = currentRoleRef.current;
+    // Role not resolved yet: fall back to fetching everything, as before.
+    const includeAdminData = role === null || isAdminRole(role);
     try {
       await Promise.allSettled([
-        refreshRemoteProfiles(activeToken),
+        refreshProfilesIfStale(activeToken),
         refreshRemoteDtrEntries(activeToken),
         refreshRemotePayPeriods(activeToken),
         refreshRemotePayments(activeToken),
         refreshRemoteCorrections(activeToken),
         refreshRemoteReimbursements(activeToken),
         refreshRemoteSettings(activeToken),
-        refreshRemoteAuditLogs(activeToken),
         refreshRemoteApprovals(activeToken),
-        refreshRemoteWageHistory(activeToken),
         refreshRemoteNotifications(activeToken),
+        ...(includeAdminData ? [refreshRemoteWageHistory(activeToken)] : []),
       ]);
     } finally {
       isRefreshingAllRef.current = false;
     }
   }, [
-    refreshRemoteProfiles,
+    refreshProfilesIfStale,
     refreshRemoteDtrEntries,
     refreshRemotePayPeriods,
     refreshRemotePayments,
     refreshRemoteCorrections,
     refreshRemoteReimbursements,
     refreshRemoteSettings,
-    refreshRemoteAuditLogs,
     refreshRemoteApprovals,
     refreshRemoteWageHistory,
     refreshRemoteNotifications,
@@ -1615,19 +1706,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshAllRemoteDataRef = React.useRef(refreshAllRemoteData);
   refreshAllRemoteDataRef.current = refreshAllRemoteData;
 
-  // Periodic sync: ONLY runs when actively authenticated with a valid session (every 30 seconds)
+  // One sign-in bootstrap per user. supabase-js re-emits SIGNED_IN on every tab
+  // focus (and broadcasts it to other tabs); getSession() and INITIAL_SESSION also
+  // overlap on page load. All of them share this single promise.
+  const bootstrapSessionData = useCallback((authUser: SupabaseUser, token: string): Promise<void> => {
+    if (bootstrapRef.current?.userId === authUser.id) return bootstrapRef.current.promise;
+    const promise = (async () => {
+      await syncUserFromSupabaseRef.current(authUser, token);
+      await refreshAllRemoteDataRef.current(token);
+    })();
+    bootstrapRef.current = { userId: authUser.id, promise };
+    return promise;
+  }, []);
+
+  // Periodic sync while signed in. Pauses in hidden tabs and catches up once on return.
   useEffect(() => {
     if (!session?.user?.id) return;
+    let isTicking = false;
 
-    const interval = setInterval(() => {
-      const activeToken = sessionRef.current?.access_token;
-      if (activeToken) {
-        refreshAllRemoteDataRef.current(activeToken);
+    const tick = async (minGapMs: number) => {
+      const token = sessionRef.current?.access_token;
+      if (!token || isTicking) return;
+      if (document.visibilityState !== 'visible') return;
+      const startedAt = Date.now();
+      if (startedAt - lastFastRefreshAtRef.current < minGapMs) return;
+      isTicking = true;
+      try {
+        const slowDue = startedAt - lastSlowRefreshAtRef.current >= SLOW_POLL_MS;
+        const hasNewNotifications = await refreshFastTier(token);
+        const notificationTriggered =
+          hasNewNotifications && Date.now() - lastSlowRefreshAtRef.current >= RESUME_MIN_GAP_MS;
+        if (slowDue || notificationTriggered) {
+          await refreshSlowTier(token);
+        }
+      } finally {
+        isTicking = false;
       }
-    }, 30000);
+    };
 
-    return () => clearInterval(interval);
-  }, [session?.user?.id]);
+    // Skip an interval tick if a refresh (e.g. the on-return catch-up) ran in the last 30s.
+    const interval = setInterval(() => tick(30_000), FAST_POLL_MS);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') tick(RESUME_MIN_GAP_MS);
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+    // refreshFastTier/refreshSlowTier are stable (all dependencies are useCallback([])).
+  }, [session?.user?.id, refreshFastTier, refreshSlowTier]);
 
   // Listen to Supabase Auth state: mounts ONCE to prevent infinite re-subscription loops
   useEffect(() => {
@@ -1695,8 +1824,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentUserId((prev) => prev || initSession.user.id);
         setIsAuthLoading(false);
 
-        await syncUserFromSupabaseRef.current(initSession.user, initSession.access_token);
-        refreshAllRemoteDataRef.current(initSession.access_token);
+        await bootstrapSessionData(initSession.user, initSession.access_token);
       } else if (!initSession) {
         setIsAuthLoading(false);
       }
@@ -1722,12 +1850,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsAuthLoading(false);
 
         if (newSession.access_token) {
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            // No-op for the same user (e.g. supabase-js re-emitting SIGNED_IN on tab focus);
+            // the polling effect's visibility handler covers refresh-on-return.
+            await bootstrapSessionData(newSession.user, newSession.access_token);
+          } else if (event === 'USER_UPDATED') {
             await syncUserFromSupabaseRef.current(newSession.user, newSession.access_token);
-            refreshAllRemoteDataRef.current(newSession.access_token);
           }
         }
       } else if (event === 'SIGNED_OUT' || !newSession) {
+        bootstrapRef.current = null;
+        currentRoleRef.current = null;
+        seenNotificationIdsRef.current = null;
+        lastProfilesFetchAtRef.current = 0;
         if (typeof window !== 'undefined') {
           try {
             localStorage.removeItem(STORAGE_KEY_LAST_ACTIVE_USER);
@@ -1751,7 +1886,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+    // bootstrapSessionData is stable (useCallback with []), so this still mounts once.
+  }, [bootstrapSessionData]);
 
   const currentUser = useMemo(() => {
     if (supabaseUser) {
@@ -1775,6 +1911,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return ANONYMOUS_USER;
   }, [users, currentUserId, supabaseUser]);
+
+  // Track role/approval changes after sign-in (e.g. an admin promotes or approves this user) for poll tiering.
+  useEffect(() => {
+    if (supabaseUser?.id && currentUser.id === supabaseUser.id && users.some((u) => u.id === currentUser.id)) {
+      currentRoleRef.current = currentUser.role;
+      isPendingApprovalRef.current = currentUser.status === 'pending_approval';
+    }
+  }, [supabaseUser?.id, currentUser.id, currentUser.role, currentUser.status, users]);
 
   const switchUserById = (userId: string) => {
     const target = users.find((u) => u.id === userId);
@@ -3272,8 +3416,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
       if (data.user && data.session?.access_token) {
-        await syncUserFromSupabase(data.user, data.session.access_token);
-        await refreshAllRemoteData(data.session.access_token);
+        await bootstrapSessionData(data.user, data.session.access_token);
       }
       return { success: true, message: 'Monthly payment status updated.' };
     } catch (err: any) {
@@ -3313,8 +3456,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
 
           if (!signError && signData?.user && signData?.session?.access_token) {
-            await syncUserFromSupabase(signData.user, signData.session.access_token);
-            await refreshAllRemoteData(signData.session.access_token);
+            await bootstrapSessionData(signData.user, signData.session.access_token);
           }
 
           return {
@@ -5630,6 +5772,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshRemotePayPeriods,
         refreshRemoteReimbursements,
         refreshAllRemoteData,
+        refreshRemoteAuditLogs,
         reimbursements,
         fileReimbursement,
         approveReimbursement,

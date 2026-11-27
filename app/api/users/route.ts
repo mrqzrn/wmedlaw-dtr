@@ -30,15 +30,19 @@ export async function GET(request: Request) {
     const profileIdSet = new Set(profileList.map((p: any) => p.id));
     const profileEmailSet = new Set(profileList.map((p: any) => (p.email || '').toLowerCase().trim()));
 
-    // 3. Fetch auth users to reconcile missing profiles and attach user_metadata
+    // 3. Fetch auth users to reconcile missing profiles and attach user_metadata.
+    // Admin-only: employees receive other profiles redacted, and their own metadata
+    // comes from auth.user below, so the Auth admin round trip is wasted for them.
     let authUsers: any[] = [];
-    try {
-      const { data: authData, error: authErr } = await supabaseServer.auth.admin.listUsers();
-      if (!authErr && authData?.users) {
-        authUsers = authData.users;
+    if (auth.isAdmin) {
+      try {
+        const { data: authData, error: authErr } = await supabaseServer.auth.admin.listUsers();
+        if (!authErr && authData?.users) {
+          authUsers = authData.users;
+        }
+      } catch (err) {
+        console.warn('Could not list auth users:', err);
       }
-    } catch (err) {
-      console.warn('Could not list auth users:', err);
     }
 
     // Merge auth metadata (such as contact_no, address, emergency_contact, bank_name, and account_no) onto profiles
